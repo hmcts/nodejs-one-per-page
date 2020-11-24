@@ -91,7 +91,23 @@ journey(app, {
   ],
   errorPages: {},
   session: {
-    redis: { url: config.redisUrl },
+    redis: {
+      url: config.redisUrl,
+      retry_strategy: function(options) {
+        const { error, totalRetryTime, attempt } = options;
+        if (error) {
+          // take actions or throw exception
+          console.log(`Redis connection failed with ${error.code}`);
+        }
+        console.log(`Redis retrying connection attempt${attempt} total retry
+        time ${totalRetryTime} ms`);
+        // reconnect after
+        const minRetryFactor = 1000;
+        const retryTime = attempt * minRetryFactor;
+        const maxRetryWait = 5000;
+        return Math.min(retryTime, maxRetryWait);
+      }
+    },
     cookie: {
       // default req.hostname
       domain: 'localhost',
